@@ -2,7 +2,10 @@
 name = "metronome"
 version = "0.1.0"
 edition = "2021"
+authors = ["Peter Steneld"]
+description = "Metronome for speed training on the guitar"
 
 [dependencies]
 tokio = { version = "1.38", features = ["rt", "rt-multi-thread", "macros", "time"] }
-rodio = "0.18"
+rodio = "0.19"
+clap = { version = "4", features = ["derive"]}
