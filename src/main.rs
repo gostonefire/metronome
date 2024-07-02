@@ -45,8 +45,8 @@ async fn main() {
 
     let (_stream, stream_handle) = OutputStream::try_default().unwrap();
     let sink = Sink::try_new(&stream_handle).unwrap();
-    let sound = Sound::load("tracks/UHH_AcoustiHatB_Hit-02_trunc.wav").unwrap();
-
+    //let sound = Sound::load("tracks/UHH_AcoustiHatB_Hit-02_trunc.wav").unwrap();
+    let sound = Sound::get().unwrap();
 
     let mut start = Instant::now();
     loop {
