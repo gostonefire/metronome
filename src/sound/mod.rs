@@ -1,6 +1,4 @@
-// use std::fs::File;
 use std::io;
-// use std::io::Read;
 use std::sync::Arc;
 use rodio::Decoder;
 
@@ -13,13 +11,6 @@ impl AsRef<[u8]> for Sound {
 }
 
 impl Sound {
-    // pub fn load(filename: &str) -> io::Result<Sound> {
-    //     let mut buf = Vec::new();
-    //     let mut file = File::open(filename)?;
-    //     file.read_to_end(&mut buf)?;
-    //     Ok(Sound(Arc::new(buf)))
-    // }
-
     pub fn get() -> io::Result<Sound> {
         Ok(Sound(Arc::new(hi_hat())))
     }
