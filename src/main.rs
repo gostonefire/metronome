@@ -1,6 +1,10 @@
 mod sound;
 
+use std::io::stdin;
 use std::time::Duration;
+use std::sync::mpsc;
+use std::sync::mpsc::{Receiver, Sender};
+use std::thread;
 use rodio;
 use rodio::{OutputStream, Sink};
 use sound::Sound;
@@ -39,11 +43,39 @@ fn main() {
     let decrease: f64 = args.decrease as f64 * -1.0;
     let segment: i64 = args.length as i64;
 
-    metronome_b(tempo, end_tempo, increase, decrease, segment);
+    let (tx, rx) = mpsc::channel::<bool>();
 
+    let handle = thread::spawn(move || {
+        metronome_b(tempo, end_tempo, increase, decrease, segment, rx);
+    });
+
+    input_handler(tx);
+
+    handle.join().unwrap();
 }
 
-fn metronome_b(mut tempo: f64, end_tempo: f64, increase: f64, decrease: f64, segment: i64) {
+fn input_handler(tx: Sender<bool>) {
+    loop {
+        let mut input = String::new();
+        match stdin().read_line(&mut input) {
+            Ok(_) => {
+                if input.starts_with("q") {
+                    tx.send(true).unwrap();
+                    break;
+                } else {
+                    tx.send(false).unwrap();
+                }
+
+            },
+            Err(e) => {
+                println!("error: {e}");
+                break;
+            },
+        }
+    }
+}
+
+fn metronome_b(mut tempo: f64, end_tempo: f64, increase: f64, decrease: f64, segment: i64, rx: Receiver<bool>) {
     let mut incrementor: f64 = decrease;
 
     let (_stream, stream_handle) = OutputStream::try_default().unwrap();
@@ -56,10 +88,16 @@ fn metronome_b(mut tempo: f64, end_tempo: f64, increase: f64, decrease: f64, seg
         let delay = Duration::from_millis((60000.0 / tempo) as u64);
 
         for _ in 0..segment {
-            std::thread::sleep(delay - (std::time::Instant::now() - start));
+            thread::sleep(delay - (std::time::Instant::now() - start));
             start = std::time::Instant::now();
             sink.append(sound.decoder());
             sink.sleep_until_end();
+
+            match rx.try_recv() {
+                Ok(r) if r => return,
+                Ok(_) => break,
+                Err(_) => ()
+            }
         }
         if tempo >= end_tempo {
             break;
