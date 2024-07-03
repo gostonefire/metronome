@@ -86,7 +86,7 @@ fn metronome_b(mut tempo: f64, end_tempo: f64, increase: f64, decrease: f64, seg
         let delay = Duration::from_millis((60000.0 / tempo) as u64);
 
         for _ in 0..segment {
-            thread::sleep(delay - (std::time::Instant::now() - start));
+            thread::sleep(delay.saturating_sub(std::time::Instant::now() - start));
             start = std::time::Instant::now();
             sink.append(sound.decoder());
             sink.sleep_until_end();
