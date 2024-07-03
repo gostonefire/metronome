@@ -45,13 +45,11 @@ fn main() {
 
     let (tx, rx) = mpsc::channel::<bool>();
 
-    let handle = thread::spawn(move || {
-        metronome_b(tempo, end_tempo, increase, decrease, segment, rx);
+    thread::spawn(move || {
+        input_handler(tx);
     });
 
-    input_handler(tx);
-
-    handle.join().unwrap();
+    metronome_b(tempo, end_tempo, increase, decrease, segment, rx);
 }
 
 fn input_handler(tx: Sender<bool>) {
