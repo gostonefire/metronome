@@ -40,7 +40,7 @@ fn main() {
     let tempo: f64 = args.start as f64;
     let end_tempo: f64 = args.end as f64;
     let increase: f64 = args.increase as f64;
-    let decrease: f64 = args.decrease as f64 * -1.0;
+    let decrease: f64 = args.decrease as f64;
     let segment: i64 = args.length as i64;
 
     let (tx, rx) = mpsc::channel::<bool>();
@@ -74,7 +74,11 @@ fn input_handler(tx: Sender<bool>) {
 }
 
 fn metronome_b(mut tempo: f64, end_tempo: f64, increase: f64, decrease: f64, segment: i64, rx: Receiver<bool>) {
-    let mut incrementor: f64 = decrease;
+    let mut incrementor = [increase;2];
+    if decrease > 0.0 {
+        incrementor[1] = decrease * -1.0;
+    }
+    let mut alternator: usize = 0;
 
     let (_stream, stream_handle) = OutputStream::try_default().unwrap();
     let sink = Sink::try_new(&stream_handle).unwrap();
@@ -100,7 +104,7 @@ fn metronome_b(mut tempo: f64, end_tempo: f64, increase: f64, decrease: f64, seg
         if tempo >= end_tempo {
             break;
         }
-        incrementor = if incrementor < 0.0 {increase} else {decrease};
-        tempo += incrementor;
+        tempo += incrementor[alternator];
+        alternator = alternator ^ 1;
     }
 }
