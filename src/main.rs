@@ -7,7 +7,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 use rodio;
 use rodio::{OutputStream, Sink};
-use sound::Sound;
+use sound::{Sound, hi_hat_hi, hi_hat_low};
 use clap::{Parser};
 
 #[derive(Parser, Debug)]
@@ -82,17 +82,22 @@ fn metronome_b(mut tempo: f64, end_tempo: f64, increase: f64, decrease: f64, seg
 
     let (_stream, stream_handle) = OutputStream::try_default().unwrap();
     let sink = Sink::try_new(&stream_handle).unwrap();
-    let sound = Sound::get().unwrap();
+    let sound_hi = Sound::get(hi_hat_hi()).unwrap();
+    let sound_low = Sound::get(hi_hat_low()).unwrap();
 
     let mut start = std::time::Instant::now();
     loop {
         println!("Tempo: {}", tempo);
         let delay = Duration::from_millis((60000.0 / tempo) as u64);
 
-        for _ in 0..segment {
+        for n in 0..segment {
             thread::sleep(delay.saturating_sub(std::time::Instant::now() - start));
             start = std::time::Instant::now();
-            sink.append(sound.decoder());
+            if n == 0 {
+                sink.append(sound_low.decoder());
+            } else {
+                sink.append(sound_hi.decoder());
+            }
             sink.sleep_until_end();
 
             match rx.try_recv() {
