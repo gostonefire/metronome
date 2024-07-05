@@ -13,13 +13,13 @@ use std::time::Duration;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    /// Starting tempo
-    #[arg(short, long, default_value_t = 60, value_parser = clap::value_parser!(u8).range(20..))]
-    start: u8,
+    /// Starting tempo (20-500)
+    #[arg(short, long, default_value_t = 60, value_parser = clap::value_parser!(u16).range(20..501))]
+    start: u16,
 
-    /// End goal tempo
-    #[arg(short, long, default_value_t = 180)]
-    end: u8,
+    /// End goal tempo (20-500)
+    #[arg(short, long, default_value_t = 180, value_parser = clap::value_parser!(u16).range(20..501))]
+    end: u16,
 
     /// Increase step
     #[arg(short, long, default_value_t = 2)]
