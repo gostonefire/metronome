@@ -1,20 +1,20 @@
 mod sound;
 
+use clap::Parser;
+use rodio;
+use rodio::{OutputStream, Sink};
+use sound::{hi_hat_hi, hi_hat_low, Sound};
 use std::io::stdin;
-use std::time::Duration;
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
-use rodio;
-use rodio::{OutputStream, Sink};
-use sound::{Sound, hi_hat_hi, hi_hat_low};
-use clap::{Parser};
+use std::time::Duration;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
     /// Starting tempo
-    #[arg(short, long, default_value_t = 60)]
+    #[arg(short, long, default_value_t = 60, value_parser = clap::value_parser!(u8).range(20..))]
     start: u8,
 
     /// End goal tempo
@@ -29,19 +29,24 @@ struct Args {
     #[arg(short, long, default_value_t = 1)]
     decrease: u8,
 
-    /// Length of play segment
-    #[arg(short, long, default_value_t = 10)]
+    /// Beats per bar
+    #[arg(short, long, default_value_t = 4, value_parser = clap::value_parser!(u8).range(1..))]
+    beats_per_bar: u8,
+
+    /// Length of play segment in bars
+    #[arg(short, long, default_value_t = 4, value_parser = clap::value_parser!(u8).range(1..))]
     length: u8,
 }
 
 fn main() {
     let args = Args::parse();
 
-    let tempo: f64 = args.start as f64;
-    let end_tempo: f64 = args.end as f64;
-    let increase: f64 = args.increase as f64;
-    let decrease: f64 = args.decrease as f64;
-    let segment: i64 = args.length as i64;
+    let tempo: i64 = args.start as i64;
+    let end_tempo: i64 = args.end as i64;
+    let increase: i64 = args.increase as i64;
+    let decrease: i64 = args.decrease as i64;
+    let beats_per_bar: i64 = args.beats_per_bar as i64;
+    let bars: i64 = args.length as i64;
 
     let (tx, rx) = mpsc::channel::<bool>();
 
@@ -49,7 +54,15 @@ fn main() {
         input_handler(tx);
     });
 
-    metronome_b(tempo, end_tempo, increase, decrease, segment, rx);
+    metronome_b(
+        tempo,
+        end_tempo,
+        increase,
+        decrease,
+        beats_per_bar,
+        bars,
+        rx,
+    );
 }
 
 fn input_handler(tx: Sender<bool>) {
@@ -63,20 +76,28 @@ fn input_handler(tx: Sender<bool>) {
                 } else {
                     tx.send(false).unwrap();
                 }
-
-            },
+            }
             Err(e) => {
                 println!("error: {e}");
                 break;
-            },
+            }
         }
     }
 }
 
-fn metronome_b(mut tempo: f64, end_tempo: f64, increase: f64, decrease: f64, segment: i64, rx: Receiver<bool>) {
-    let mut incrementor = [increase;2];
-    if decrease > 0.0 {
-        incrementor[1] = decrease * -1.0;
+fn metronome_b(
+    mut tempo: i64,
+    end_tempo: i64,
+    increase: i64,
+    decrease: i64,
+    beats_per_bar: i64,
+    bars: i64,
+    rx: Receiver<bool>,
+) {
+    let segment = beats_per_bar * bars;
+    let mut incrementor = [increase; 2];
+    if decrease > 0 {
+        incrementor[1] = decrease * -1;
     }
     let mut alternator: usize = 0;
 
@@ -88,12 +109,12 @@ fn metronome_b(mut tempo: f64, end_tempo: f64, increase: f64, decrease: f64, seg
     let mut start = std::time::Instant::now();
     loop {
         println!("Tempo: {}", tempo);
-        let delay = Duration::from_millis((60000.0 / tempo) as u64);
+        let delay = Duration::from_millis((60000 / tempo) as u64);
 
         for n in 0..segment {
             thread::sleep(delay.saturating_sub(std::time::Instant::now() - start));
             start = std::time::Instant::now();
-            if n == 0 {
+            if n % beats_per_bar == 0 {
                 sink.append(sound_low.decoder());
             } else {
                 sink.append(sound_hi.decoder());
@@ -103,7 +124,7 @@ fn metronome_b(mut tempo: f64, end_tempo: f64, increase: f64, decrease: f64, seg
             match rx.try_recv() {
                 Ok(r) if r => return,
                 Ok(_) => break,
-                Err(_) => ()
+                Err(_) => (),
             }
         }
         if tempo >= end_tempo {
