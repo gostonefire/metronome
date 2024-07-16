@@ -91,10 +91,13 @@ fn metronome_b(
     increase: i64,
     decrease: i64,
     beats_per_bar: i64,
-    bars: i64,
+    mut bars: i64,
     rx: Receiver<bool>,
 ) {
-    let segment = beats_per_bar * bars;
+    let mut segment = beats_per_bar * bars;
+    let target_bars_divisor: f64 = (tempo * beats_per_bar) as f64;
+    let start_segment: f64 = segment as f64;
+
     let mut incrementor = [increase; 2];
     if decrease > 0 {
         incrementor[1] = decrease * -1;
@@ -108,7 +111,7 @@ fn metronome_b(
 
     let mut start = std::time::Instant::now();
     loop {
-        println!("Tempo: {}", tempo);
+        println!("Tempo: {}, Bars: {}", tempo, bars);
         let delay = Duration::from_millis((60000 / tempo) as u64);
 
         for n in 0..segment {
@@ -131,6 +134,8 @@ fn metronome_b(
             break;
         }
         tempo += incrementor[alternator];
+        bars = f64::round(start_segment * tempo as f64 / target_bars_divisor) as i64;
+        segment = beats_per_bar * bars;
         alternator = alternator ^ 1;
     }
 }
