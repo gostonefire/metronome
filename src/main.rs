@@ -36,7 +36,8 @@ struct Args {
     #[arg(short, long, default_value_t = 0)]
     decrease: u8,
 
-    /// Composition of bar
+    /// Composition of bar where each beat is defined by length [1, 2, 4, 8, 16],
+    /// sound [k (kick), m (mixed), h (hi-hat)] and play indicator [p (play), s (silent)]
     #[arg(short, long, default_value = "4kp 4hp 4hp 4hp")]
     composition: String,
 
