@@ -37,7 +37,7 @@ struct Args {
     decrease: u8,
 
     /// Composition of bar
-    #[arg(short, long, default_value = "4k 4h 4h 4h")]
+    #[arg(short, long, default_value = "4kp 4hp 4hp 4hp")]
     composition: String,
 
     /// Length of play segment in bars
@@ -80,9 +80,9 @@ fn decode(composition: String) -> Result<Vec<(f64, usize, char)>, DecodeError> {
     for p in composition
         .trim()
         .split(' ')
-        .map(|x| format!("{:0>3}", x.trim()))
+        .map(|x| format!("{:0>4}", x.trim()))
         .collect::<Vec<String>>() {
-        if p.len() != 3 {
+        if p.len() != 4 {
             return Err(DecodeError("malformed beat definition"
                 .to_string()));
         }
@@ -99,14 +99,18 @@ fn decode(composition: String) -> Result<Vec<(f64, usize, char)>, DecodeError> {
             _  => return Err(DecodeError("illegal note found, should be one of 1, 2, 4, 8, 16"
                 .to_string())),
         };
-        let i: usize;
-        let c: char;
-        match &p[2..3] {
-            "k" => {i = 0; c = '\0';},
-            "m" => {i = 1; c = '*';},
-            "h" => {i = 2; c = '*';},
-            "p" => {i = 3; c = '\0';},
+        let i: usize = match &p[2..3] {
+            "k" => 0,
+            "m" => 1,
+            "h" => 2,
+            "p" => 3,
             _   => return Err(DecodeError("illegal sound found, should be one of k, m, h, p"
+                .to_string())),
+        };
+        let c: char = match &p[3..4] {
+            "p" => '*',
+            "s" => '\0',
+            _   => return Err(DecodeError("illegal play indicator found, should be one of p, s"
                 .to_string())),
         };
 
