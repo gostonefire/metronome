@@ -1,6 +1,6 @@
 [package]
 name = "metronome"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 authors = ["Peter Steneld"]
 description = "Metronome for speed training on the guitar"

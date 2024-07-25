@@ -139,7 +139,10 @@ fn metronome(
     let mut alternator: usize = 0;
 
     let (_stream, stream_handle) = OutputStream::try_default().unwrap();
-    let sink = Sink::try_new(&stream_handle).unwrap();
+    let mut v_sink: Vec<Sink> = Vec::new();
+    for _ in &bar {
+        v_sink.push(Sink::try_new(&stream_handle).unwrap());
+    }
 
     let sound: [Sound;3] = [
         Sound::get(kick()).unwrap(),
@@ -156,15 +159,14 @@ fn metronome(
         let sixteenth: f64 = (60000f64 / tempo as f64) / 4f64;
 
         for _ in 0..bars {
-            for n in &bar {
+            for (i, n) in bar.iter().enumerate() {
                 let delay = Duration::from_millis((note * sixteenth) as u64);
                 thread::sleep(delay.saturating_sub(std::time::Instant::now() - start));
                 start = std::time::Instant::now();
                 if n.1 < 3 {
                     print!("{}", n.2);
                     io::stdout().flush().unwrap();
-                    sink.append(sound[n.1].decoder());
-                    sink.sleep_until_end();
+                    v_sink[i].append(sound[n.1].decoder());
                 }
                 note = n.0;
             }
