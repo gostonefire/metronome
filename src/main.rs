@@ -18,26 +18,45 @@ impl fmt::Display for DecodeError {
 }
 
 #[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
+#[command(version, about, verbatim_doc_comment)]
+/// Metronome for speed training on the guitar
+///
+/// Most switches are quite self-explanatory except the -c/--composition.
+/// If not given the default will be a 4/4 with 4 quarter notes starting with a kick drum and 3
+/// hi-hats. Each beat will display a star (*) when playing.
+///
+/// The notation for each beat in a bar comprises three values:
+/// - Length of the beat note - 1 (whole), 2 (half), 4 (quarter), 8 (eighth) and 16 (sixteenth)
+/// - Sound to use - k (kick drum), h (hi-hat), m (combined kick and hi-hat), p (silent pause)
+/// - Play indicator - p (prints a star when playing), s (prints nothing when playing)
+///
+/// Each beat must be separated by a space.
+///
+/// There is no hard rule that each bar must sum up to a full whole note, but to correspond
+/// to a given tempo it should.
+///
+/// Example:
+/// -c "8mp 8hp 8ks 16hp 16hp 8ks 8ps 16mp 16hp 16ps 16hp"
+/// Intends for the user to play on the 1, 2, 4, 5, 8, 9 and 11 beat where the rest is
+/// supporting beats or pauses.
 struct Args {
-    /// Starting tempo (20-500)
+    /// Starting quarter note tempo (20-500)
     #[arg(short, long, default_value_t = 60, value_parser = clap::value_parser!(u16).range(20..501))]
     start: u16,
 
-    /// End goal tempo (20-500)
+    /// End goal quarter note tempo (20-500)
     #[arg(short, long, default_value_t = 60, value_parser = clap::value_parser!(u16).range(20..501))]
     end: u16,
 
-    /// Increase step
+    /// Increase step (alternates with a decrease if decrease is greater than zero)
     #[arg(short, long, default_value_t = 0)]
     increase: u8,
 
-    /// Decrease step
+    /// Decrease step (alternates with an increase if increase is greater than zero)
     #[arg(short, long, default_value_t = 0)]
     decrease: u8,
 
-    /// Composition of bar where each beat is defined by length [1, 2, 4, 8, 16],
-    /// sound [k (kick), m (mixed), h (hi-hat)] and play indicator [p (play), s (silent)]
+    /// Composition of bar
     #[arg(short, long, default_value = "4kp 4hp 4hp 4hp")]
     composition: String,
 
