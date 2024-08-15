@@ -233,4 +233,6 @@ fn metronome(
         }
         last_tempo = tempo;
     }
+
+    thread::sleep(Duration::from_millis(500));
 }
