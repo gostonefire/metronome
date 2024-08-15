@@ -3,11 +3,11 @@ mod sound;
 use clap::Parser;
 use rodio;
 use rodio::{OutputStream, Sink};
-use sound::{kick, kick_hi_hat, hi_hat_hi, Sound};
 use std::str::FromStr;
 use std::{fmt, io, thread};
 use std::io::Write;
 use std::time::Duration;
+use sound::{hi_hat, kick_hi_hat, kick, Sound};
 
 #[derive(Debug, Clone)]
 struct DecodeError(String);
@@ -171,7 +171,7 @@ fn metronome(
     let sound: [Sound;3] = [
         Sound::get(kick()).unwrap(),
         Sound::get(kick_hi_hat()).unwrap(),
-        Sound::get(hi_hat_hi()).unwrap(),
+        Sound::get(hi_hat()).unwrap(),
     ];
 
     println!("Tempo: {}, Bars: {}", tempo, bars);
