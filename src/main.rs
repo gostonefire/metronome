@@ -109,9 +109,8 @@ fn decode(composition: String) -> Result<Vec<(f64, usize, char)>, DecodeError> {
     let mut bar: Vec<(f64, usize, char)> = Vec::new();
 
     for p in composition
-        .trim()
-        .split(' ')
-        .map(|x| format!("{:0>4}", x.trim()))
+        .split_whitespace()
+        .map(|x| format!("{:0>4}", x))
         .collect::<Vec<String>>() {
         if p.len() != 4 {
             return Err(DecodeError("malformed beat definition"
