@@ -67,6 +67,10 @@ struct Args {
     /// Length of play segment in bars
     #[arg(short, default_value_t = 1, value_parser = clap::value_parser!(u8).range(1..))]
     length: u8,
+
+    /// Adaptive segment length increases length when tempo goes up
+    #[arg(short)]
+    adaptive: bool,
 }
 
 fn main() {
@@ -78,8 +82,8 @@ fn main() {
     let decrease: i64 = args.decrease as i64;
     let sweep: bool = args.wave;
     let composition: String = args.composition;
-
     let bars: i64 = args.length as i64;
+    let adaptive: bool = args.adaptive;
 
     let bar = match decode(composition) {
         Ok(b) => b,
@@ -97,6 +101,7 @@ fn main() {
         bar,
         bars,
         sweep,
+        adaptive,
     );
 }
 
@@ -159,6 +164,7 @@ fn metronome(
     bar: Vec<(f64,usize, char)>,
     mut bars: i64,
     sweep: bool,
+    adaptive: bool,
 ) {
     let start_tempo = tempo;
     let mut last_tempo = tempo;
@@ -226,7 +232,9 @@ fn metronome(
             }
         }
 
-        bars = f64::round(tempo as f64 / (start_tempo * start_bars) as f64) as i64;
+        if adaptive {
+            bars = f64::round(tempo as f64 / (start_tempo * start_bars) as f64) as i64;
+        }
 
         if tempo != last_tempo {
             println!("Tempo: {}, Bars: {}", tempo, bars);
