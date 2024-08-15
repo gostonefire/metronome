@@ -41,27 +41,31 @@ impl fmt::Display for DecodeError {
 /// supporting beats or pauses.
 struct Args {
     /// Starting quarter note tempo (20-500)
-    #[arg(short, long, default_value_t = 60, value_parser = clap::value_parser!(u16).range(20..501))]
+    #[arg(short, default_value_t = 60, value_parser = clap::value_parser!(u16).range(20..501))]
     start: u16,
 
     /// End goal quarter note tempo (20-500)
-    #[arg(short, long, default_value_t = 60, value_parser = clap::value_parser!(u16).range(20..501))]
+    #[arg(short, default_value_t = 60, value_parser = clap::value_parser!(u16).range(20..501))]
     end: u16,
 
     /// Increase step (alternates with a decrease if decrease is greater than zero)
-    #[arg(short, long, default_value_t = 0)]
+    #[arg(short, default_value_t = 0)]
     increase: u8,
 
     /// Decrease step (alternates with an increase if increase is greater than zero)
-    #[arg(short, long, default_value_t = 0)]
+    #[arg(short, default_value_t = 0)]
     decrease: u8,
 
+    /// Sweep from start to end and back in loop
+    #[arg(short)]
+    wave: bool,
+
     /// Composition of bar
-    #[arg(short, long, default_value = "4kp 4hp 4hp 4hp")]
+    #[arg(short, default_value = "4kp 4hp 4hp 4hp")]
     composition: String,
 
     /// Length of play segment in bars
-    #[arg(short, long, default_value_t = 1, value_parser = clap::value_parser!(u8).range(1..))]
+    #[arg(short, default_value_t = 1, value_parser = clap::value_parser!(u8).range(1..))]
     length: u8,
 }
 
@@ -72,6 +76,7 @@ fn main() {
     let end_tempo: i64 = if args.end > args.start {args.end as i64} else {tempo};
     let increase: i64 = args.increase as i64;
     let decrease: i64 = args.decrease as i64;
+    let sweep: bool = args.wave;
     let composition: String = args.composition;
 
     let bars: i64 = args.length as i64;
@@ -91,6 +96,7 @@ fn main() {
         decrease,
         bar,
         bars,
+        sweep,
     );
 }
 
@@ -152,13 +158,17 @@ fn metronome(
     decrease: i64,
     bar: Vec<(f64,usize, char)>,
     mut bars: i64,
+    sweep: bool,
 ) {
-    let start_tempo = tempo as f64;
-    let start_bars = bars as f64;
+    let start_tempo = tempo;
+    let mut last_tempo = tempo;
+    let start_bars = bars;
 
     let mut incrementor = [increase; 2];
     if decrease > 0 {
         incrementor[1] = decrease * -1;
+    } else if sweep {
+        incrementor[1] *= -1;
     }
     let mut alternator: usize = 0;
 
@@ -198,14 +208,29 @@ fn metronome(
         }
 
         tempo += incrementor[alternator];
-        bars = f64::round(tempo as f64 / start_tempo * start_bars) as i64;
-        if tempo > end_tempo {
-            break;
+
+        if sweep {
+            if tempo > end_tempo {
+                alternator = 1;
+                tempo = end_tempo;
+                tempo += incrementor[alternator];
+            } else if tempo < start_tempo {
+                alternator = 0;
+                tempo = start_tempo;
+                tempo += incrementor[alternator];
+            }
+        } else {
+            alternator = alternator ^ 1;
+            if tempo > end_tempo || tempo < start_tempo {
+                break;
+            }
         }
 
-        if incrementor[alternator] != 0 {
+        bars = f64::round(tempo as f64 / (start_tempo * start_bars) as f64) as i64;
+
+        if tempo != last_tempo {
             println!("Tempo: {}, Bars: {}", tempo, bars);
         }
-        alternator = alternator ^ 1;
+        last_tempo = tempo;
     }
 }
