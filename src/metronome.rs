@@ -31,7 +31,7 @@ pub fn metronome(sched: Vec<Schedule>, max_ticks: usize) {
             }
 
             if s.tempo != last_tempo {
-                println!("Tempo: {}, Bars: {}", s.tempo, s.bars);
+                println!("Tempo: {}", s.tempo);
                 last_tempo = s.tempo;
             }
 
