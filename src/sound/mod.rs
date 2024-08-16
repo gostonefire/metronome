@@ -34,6 +34,11 @@ pub fn kick_hi_hat() -> Vec<u8> {
 }
 
 pub fn hi_hat() -> Vec<u8> {
-    let b = include_bytes!("../../tracks/hihat_trunc_0_1.wav");
+    let b = include_bytes!("../../tracks/hihat_trunc.wav");
+    Vec::from(b)
+}
+
+pub fn sticks() -> Vec<u8> {
+    let b = include_bytes!("../../tracks/sticks_trunc.wav");
     Vec::from(b)
 }
