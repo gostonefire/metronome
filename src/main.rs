@@ -12,7 +12,7 @@ use crate::scheduling::{schedule};
 #[command(version, about, verbatim_doc_comment)]
 /// Metronome for speed training on the guitar
 ///
-/// Most switches are quite self-explanatory except the -c/--composition.
+/// Most switches are quite self-explanatory except the -c.
 /// If not given the default will be a 4/4 with 4 quarter notes starting with a kick drum and 3
 /// hi-hats. Each beat will display a star (*) when playing.
 ///
