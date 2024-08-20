@@ -22,6 +22,7 @@ pub fn metronome(sched: Vec<Schedule>, max_ticks: usize) {
     let mut start = std::time::Instant::now();
     let mut note: f64 = 0f64;
     let mut last_tempo = 0i64;
+    let mut sixteenth = 0f64;
 
     'outer: loop {
         for b in 0..sched.len() {
@@ -35,7 +36,7 @@ pub fn metronome(sched: Vec<Schedule>, max_ticks: usize) {
                 last_tempo = s.tempo;
             }
 
-            let sixteenth: f64 = (60000f64 / s.tempo as f64) / 4f64;
+            let next_sixteenth: f64 = (60000f64 / s.tempo as f64) / 4f64;
 
             for _ in 0..s.bars {
                 for (i, n) in s.bar.iter().enumerate() {
@@ -48,6 +49,7 @@ pub fn metronome(sched: Vec<Schedule>, max_ticks: usize) {
                         v_sink[i].append(sound[n.1].decoder());
                     }
                     note = n.0;
+                    sixteenth = next_sixteenth;
                 }
                 print!("{}", s.lf);
             }

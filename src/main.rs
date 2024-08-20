@@ -32,11 +32,11 @@ use crate::scheduling::{schedule};
 /// supporting beats or pauses.
 struct Args {
     /// Lower quarter note tempo (20-500)
-    #[arg(short, default_value_t = 60, value_parser = clap::value_parser!(u16).range(20..501))]
+    #[arg(short, default_value_t = 60, value_parser = clap::value_parser!(u16).range(20..=500))]
     lower: u16,
 
     /// Upper quarter note tempo (20-500)
-    #[arg(short, default_value_t = 60, value_parser = clap::value_parser!(u16).range(20..501))]
+    #[arg(short, default_value_t = 360, value_parser = clap::value_parser!(u16).range(20..=500))]
     upper: u16,
 
     /// Increase step (alternates with a decrease if decrease is greater than zero)
@@ -63,12 +63,12 @@ struct Args {
     #[arg(short)]
     adaptive: bool,
 
-    /// Composition of bar
-    #[arg(short, default_value = "4kp 4hp 4hp 4hp")]
-    composition: String,
-
-    /// Warn before tempo change with optional warn bar composition
+    /// Composition of bar [default: "4kp 4hp 4hp 4hp"]
     #[arg(short)]
+    composition: Option<String>,
+
+    /// Warn before tempo change with optional warn bar composition [default: "4ss 4ss 4ss 4ss"]
+    #[arg(short, value_name = "COMPOSITION")]
     warn: Option<Option<String>>,
 }
 
@@ -76,7 +76,7 @@ fn main() -> Result<(), String> {
     let args = Args::parse();
 
     let conf = build_config(args)?;
-    let sched = schedule(&conf);
+    let sched = schedule(&conf)?;
 
     metronome(sched, conf.max_ticks);
 

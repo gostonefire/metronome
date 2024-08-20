@@ -8,14 +8,44 @@ pub struct Schedule {
     pub(crate) stop: bool,
 }
 
-pub fn schedule(conf: &Configuration) -> Vec<Schedule> {
+pub fn schedule(conf: &Configuration) -> Result<Vec<Schedule>, String> {
     let mut sched: Vec<Schedule> = Vec::new();
-    let mut bars = conf.bars;
 
+    if conf.increase > conf.upper_tempo - conf.lower_tempo {
+        return Err("Increase argument can't be higher than difference between low and high".to_string());
+    }
+
+    if conf.decrease > conf.upper_tempo - conf.lower_tempo {
+        return Err("Decrease argument can't be higher than difference between low and high".to_string());
+    }
+
+    if conf.sweep {
+        if conf.increase == 0 || conf.decrease == 0 {
+            return Err("Both increase and decrease argument must be non zero when in sweep mode".to_string());
+        }
+
+        schedule_sweep(conf, &mut sched);
+    } else if conf.burst > 0 {
+
+        schedule_burst(conf, &mut sched);
+    } else if conf.increase == conf.decrease {
+
+        schedule_loop(conf, &mut sched);
+    } else {
+        if conf.increase < conf.decrease {
+            return Err("Increase must be larger or equal to decrease (unless in sweep mode)".to_string());
+        }
+
+        schedule_increase(conf, &mut sched);
+    }
+
+    Ok(sched)
+}
+
+fn schedule_increase(conf: &Configuration, sched: &mut Vec<Schedule>) {
+    let mut bars = conf.bars;
     let mut tempo = conf.lower_tempo;
     let mut last_tempo = conf.lower_tempo;
-    let start_tempo = conf.lower_tempo;
-    let start_bars = bars;
 
     let mut incrementor = [conf.increase; 2];
     if conf.decrease > 0 {
@@ -25,53 +55,95 @@ pub fn schedule(conf: &Configuration) -> Vec<Schedule> {
     }
     let mut alternator: usize = 0;
 
-    add_bar(&conf, tempo, bars, &mut sched);
+    add_bar(&conf, tempo, bars, sched);
 
-    if conf.burst > 0 {
-        if conf.warn && tempo != conf.upper_tempo {
-            add_warn_bar(&conf, conf.upper_tempo, &mut sched);
+    loop {
+        tempo += incrementor[alternator];
+
+        alternator = alternator ^ 1;
+        if tempo > conf.upper_tempo || tempo < conf.lower_tempo {
+            add_stop_bar(&conf, sched);
+            break;
         }
 
-        add_bar(&conf, conf.upper_tempo, conf.burst, &mut sched);
-
-    } else {
-        loop {
-            tempo += incrementor[alternator];
-
-            if conf.sweep {
-                if tempo > conf.upper_tempo {
-                    alternator = 1;
-                    tempo = conf.upper_tempo;
-                    tempo += incrementor[alternator];
-                } else if tempo <= start_tempo {
-                    break;
-                }
-            } else {
-                alternator = alternator ^ 1;
-                if tempo > conf.upper_tempo || tempo < start_tempo {
-                    add_stop_bar(&conf, &mut sched);
-                    break;
-                }
-            }
-
-            if conf.adaptive {
-                bars = f64::round(tempo as f64 / (start_tempo * start_bars) as f64) as i64;
-            }
-
-            if conf.warn && tempo != last_tempo {
-                add_warn_bar(&conf, tempo, &mut sched);
-            }
-
-            add_bar(&conf, tempo, bars, &mut sched);
-
-            last_tempo = tempo;
+        if conf.adaptive {
+            bars = f64::round(tempo as f64 / (conf.lower_tempo * conf.bars) as f64) as i64;
         }
+
+        if conf.warn && tempo != last_tempo {
+            add_warn_bar(&conf, tempo, sched);
+        }
+
+        add_bar(&conf, tempo, bars, sched);
+
+        last_tempo = tempo;
+    }
+}
+
+fn schedule_sweep(conf: &Configuration, sched: &mut Vec<Schedule>) {
+    let mut bars = conf.bars;
+    let mut tempo = conf.lower_tempo;
+    let mut last_tempo = conf.lower_tempo;
+
+    let mut incrementor = conf.increase;
+
+    add_bar(&conf, tempo, bars, sched);
+
+    loop {
+        tempo += incrementor;
+
+        if tempo > conf.upper_tempo {
+            incrementor = conf.decrease * -1;
+            tempo = conf.upper_tempo;
+            tempo += incrementor;
+        } else if tempo <= conf.lower_tempo {
+            break;
+        }
+
+        if conf.adaptive {
+            bars = f64::round(tempo as f64 / (conf.lower_tempo * conf.bars) as f64) as i64;
+        }
+
+        if conf.warn && tempo != last_tempo {
+            add_warn_bar(&conf, tempo, sched);
+        }
+
+        add_bar(&conf, tempo, bars, sched);
+
+        last_tempo = tempo;
     }
 
-    if conf.warn && !sched[sched.len() - 1].stop && sched[0].tempo != sched[sched.len() - 1].tempo {
-        add_warn_bar(&conf, sched[0].tempo, &mut sched);
+    if conf.warn {
+        add_warn_bar(&conf, sched[0].tempo, sched);
     }
-    return sched;
+}
+
+fn schedule_burst(conf: &Configuration, sched: &mut Vec<Schedule>) {
+    add_bar(&conf, conf.lower_tempo, conf.bars, sched);
+
+    if conf.warn && conf.lower_tempo != conf.upper_tempo {
+        add_warn_bar(&conf, conf.upper_tempo, sched);
+    }
+
+    add_bar(&conf, conf.upper_tempo, conf.burst, sched);
+
+    if conf.warn && conf.lower_tempo != conf.upper_tempo  {
+        add_warn_bar(&conf, sched[0].tempo, sched);
+    }
+}
+
+fn schedule_loop(conf: &Configuration, sched: &mut Vec<Schedule>) {
+    add_bar(&conf, conf.lower_tempo, conf.bars, sched);
+
+    if conf.warn && conf.increase > 0 {
+        add_warn_bar(&conf, conf.lower_tempo + conf.increase, sched);
+    }
+
+    add_bar(&conf, conf.lower_tempo + conf.increase, conf.bars, sched);
+
+    if conf.warn && conf.increase > 0  {
+        add_warn_bar(&conf, sched[0].tempo, sched);
+    }
 }
 
 fn add_bar(conf: &Configuration, tempo: i64, bars: i64, sched: &mut Vec<Schedule>) {

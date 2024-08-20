@@ -37,7 +37,7 @@ pub fn build_config(args: Args) -> Result<Configuration, String> {
     let increase: i64 = args.increase as i64;
     let decrease: i64 = args.decrease as i64;
     let sweep: bool = args.sweep;
-    let composition: String = args.composition;
+    let composition: String = args.composition.unwrap_or_else(|| "4kp 4hp 4hp 4hp".to_string());
     let bars: i64 = args.n_bars as i64;
     let adaptive: bool = args.adaptive;
     let burst: i64 = args.burst as i64;
