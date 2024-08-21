@@ -67,7 +67,7 @@ fn schedule_increase(conf: &Configuration, sched: &mut Vec<Schedule>) {
         }
 
         if conf.adaptive {
-            bars = f64::round(tempo as f64 / (conf.lower_tempo * conf.bars) as f64) as i64;
+            bars = f64::round(tempo as f64 / conf.lower_tempo as f64 * conf.bars as f64) as i64;
         }
 
         if conf.warn && tempo != last_tempo {
@@ -101,7 +101,7 @@ fn schedule_sweep(conf: &Configuration, sched: &mut Vec<Schedule>) {
         }
 
         if conf.adaptive {
-            bars = f64::round(tempo as f64 / (conf.lower_tempo * conf.bars) as f64) as i64;
+            bars = f64::round(tempo as f64 / conf.lower_tempo as f64 * conf.bars as f64) as i64;
         }
 
         if conf.warn && tempo != last_tempo {
