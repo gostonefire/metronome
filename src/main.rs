@@ -12,8 +12,15 @@ use crate::scheduling::{schedule};
 #[command(version, about, verbatim_doc_comment)]
 /// Metronome for speed training on the guitar
 ///
-/// Most switches are quite self-explanatory except the -c.
-/// If not given the default will be a 4/4 with 4 quarter notes starting with a kick drum and 3
+/// Most switches are quite self-explanatory except the -c end perhaps the -s.
+///
+/// The sweep mode (-s) does a sweep from the lower tempo to the upper tempo and back down in
+/// an endless loop. The increase parameter is used when going up, and the decrease parameter
+/// is used when going down, hence you can for instance go upp in a slower pace and go down
+/// a little mote rapid if wanted.
+///
+/// The bar composition (-c) is used to allow for more creative bars.
+/// If not given, the default will be a 4/4 with 4 quarter notes starting with a kick drum and 3
 /// hi-hats. Each beat will display a star (*) when playing.
 ///
 /// The notation for each beat in a bar comprises three values:
@@ -48,18 +55,18 @@ struct Args {
     decrease: u8,
 
     /// Number of bars to play in each tempo
-    #[arg(short, default_value_t = 1, value_parser = clap::value_parser!(u8).range(1..))]
+    #[arg(short, default_value_t = 1, value_parser = clap::value_parser!(u8).range(1..), value_name = "BARS IN TEMPO")]
     n_bars: u8,
 
     /// Burst mode where upper tempo is burst tempo and lower tempo is normal tempo
-    #[arg(short, default_value_t = 0)]
+    #[arg(short, default_value_t = 0, value_name = "BARS IN BURST")]
     burst: u8,
 
-    /// Sweep from start to end and back in loop, ignored if in burst mode
+    /// Sweep from lower to upper and back in loop, ignored if in burst mode
     #[arg(short)]
     sweep: bool,
 
-    /// Adaptive segment length increases length when tempo goes up
+    /// Adaptive segment length, increases number of bars when tempo goes up
     #[arg(short)]
     adaptive: bool,
 

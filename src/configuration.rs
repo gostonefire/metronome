@@ -1,6 +1,5 @@
 use crate::Args;
 use std::fmt;
-use std::str::FromStr;
 
 #[derive(Debug, Clone)]
 struct DecodeError(String);
@@ -112,17 +111,10 @@ fn decode(composition: String) -> Result<Vec<(f64, usize, char)>, DecodeError> {
 
     for p in composition
         .split_whitespace()
-        .map(|x| format!("{:0>4}", x))
-        .collect::<Vec<String>>()
+        .map(|x| beat(x))
+        .collect::<Vec<(u8, &str, &str)>>()
     {
-        if p.len() != 4 {
-            return Err(DecodeError("malformed beat definition".to_string()));
-        }
-
-        let n = u8::from_str(&p[0..2]).map_err(|_| {
-            DecodeError("illegal note found, should be one of 1, 2, 4, 8, 16".to_string())
-        })?;
-        let t: f64 = match n {
+        let t: f64 = match p.0 {
             1 => 16f64,
             2 => 8f64,
             4 => 4f64,
@@ -134,7 +126,7 @@ fn decode(composition: String) -> Result<Vec<(f64, usize, char)>, DecodeError> {
                 ))
             }
         };
-        let i: usize = match &p[2..3] {
+        let i: usize = match p.1 {
             "k" => 0,
             "m" => 1,
             "h" => 2,
@@ -142,11 +134,11 @@ fn decode(composition: String) -> Result<Vec<(f64, usize, char)>, DecodeError> {
             "p" => 4,
             _ => {
                 return Err(DecodeError(
-                    "illegal sound found, should be one of k, m, h, p".to_string(),
+                    "illegal sound found, should be one of k, m, h, s, p".to_string(),
                 ))
             }
         };
-        let c: char = match &p[3..4] {
+        let c: char = match p.2 {
             "p" => '*',
             "s" => '\0',
             _ => {
@@ -163,5 +155,24 @@ fn decode(composition: String) -> Result<Vec<(f64, usize, char)>, DecodeError> {
         Err(DecodeError("empty composition".to_string()))
     } else {
         Ok(bar)
+    }
+}
+
+fn beat(b: &str) -> (u8, &str, &str) {
+    let note = b.chars().filter(|c| c.is_digit(10)).collect::<String>();
+    let n = note.parse::<u8>().unwrap_or_default();
+    let n_len = note.len();
+    let b_len = b.len();
+
+    if n_len == 0 {
+        (0, "", "")
+    } else if b_len == n_len {
+        (n, "h", "s")
+    } else if b_len == n_len + 1 {
+        (n, &b[n_len..n_len + 1], "s")
+    } else if b_len > n_len + 1 {
+        (n, &b[n_len..n_len + 1], &b[n_len + 1..n_len + 2])
+    } else {
+        (0, "", "")
     }
 }
