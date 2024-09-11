@@ -77,6 +77,10 @@ struct Args {
     /// Warn before tempo change with optional warn bar composition [default: "4ss 4ss 4ss 4ss"]
     #[arg(short, value_name = "COMPOSITION")]
     warn: Option<Option<String>>,
+
+    /// Train time after which metronome stops, in minutes [default: forever]
+    #[arg(short, value_name = "TRAIN TIME")]
+    train_time: Option<u64>
 }
 
 fn main() -> Result<(), String> {
@@ -85,7 +89,7 @@ fn main() -> Result<(), String> {
     let conf = build_config(args)?;
     let sched = schedule(&conf)?;
 
-    metronome(sched, conf.max_ticks);
+    metronome(sched, conf.max_ticks, conf.train_time);
 
     Ok(())
 }

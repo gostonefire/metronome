@@ -1,5 +1,6 @@
 use crate::Args;
 use std::fmt;
+use std::time::Duration;
 
 #[derive(Debug, Clone)]
 struct DecodeError(String);
@@ -24,9 +25,11 @@ pub struct Configuration {
     pub(crate) adaptive: bool,
     pub(crate) warn: bool,
     pub(crate) max_ticks: usize,
+    pub(crate) train_time: Duration,
 }
 
 pub fn build_config(args: Args) -> Result<Configuration, String> {
+    let year = (365*24*60*60) as u64;
     let lower_tempo: i64 = args.lower as i64;
     let upper_tempo: i64 = if args.upper > args.lower {
         args.upper as i64
@@ -88,6 +91,8 @@ pub fn build_config(args: Args) -> Result<Configuration, String> {
 
     let max_ticks = bar.len().max(warn_bar.len());
 
+    let train_time = Duration::from_secs(args.train_time.map_or_else(|| year, |t| t * 60));
+
     Ok(Configuration {
         lower_tempo,
         upper_tempo,
@@ -103,6 +108,7 @@ pub fn build_config(args: Args) -> Result<Configuration, String> {
         adaptive,
         warn,
         max_ticks,
+        train_time,
     })
 }
 

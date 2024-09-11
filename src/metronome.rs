@@ -5,7 +5,7 @@ use std::io::Write;
 use std::time::Duration;
 use std::{io, thread};
 
-pub fn metronome(sched: Vec<Schedule>, max_ticks: usize) {
+pub fn metronome(sched: Vec<Schedule>, max_ticks: usize, train_time: Duration) {
     let (_stream, stream_handle) = OutputStream::try_default().unwrap();
     let mut v_sink: Vec<Sink> = Vec::new();
     for _ in 0..max_ticks {
@@ -19,6 +19,7 @@ pub fn metronome(sched: Vec<Schedule>, max_ticks: usize) {
         Sound::get(sticks()).unwrap(),
     ];
 
+    let train_start = std::time::Instant::now();
     let mut start = std::time::Instant::now();
     let mut note: f64 = 0f64;
     let mut last_tempo = 0i64;
@@ -27,7 +28,7 @@ pub fn metronome(sched: Vec<Schedule>, max_ticks: usize) {
     'outer: loop {
         for b in 0..sched.len() {
             let s = &sched[b];
-            if s.stop {
+            if s.stop || start.duration_since(train_start) > train_time {
                 break 'outer;
             }
 
