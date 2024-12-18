@@ -21,7 +21,7 @@ use crate::scheduling::{schedule};
 ///
 /// The bar composition (-c) is used to allow for more creative bars.
 /// If not given, the default will be a 4/4 with 4 quarter notes starting with a kick drum and 3
-/// hi-hats. Each beat will display a star (*) when playing.
+/// hi-hats.
 ///
 /// The notation for each beat in a bar comprises three values:
 /// - Length of the beat note - 1 (whole), 2 (half), 4 (quarter), 8 (eighth) and 16 (sixteenth)
